@@ -11,7 +11,9 @@
 #let group = "Group 6"
 #let date = datetime.today()
 #show regex("Task \d+:"): strong
+#show "Task:": strong
 #show "Answer:": strong
+#show "Result:": strong
 #let line2() = line(length: 7%, stroke: 1pt + gray.darken(50%))
 
 #let round4(body) = calc.round(body, digits: 4)
@@ -167,7 +169,7 @@ $ a = 1/(1-f_2 + f_2/s) $
         s & = 10:  && "Acceleration of the " f_2 " fraction"
     $
     Amdahl's Law:
-    $ a = 1/(1-0.2 + 0.2/10) = 1/#round4(1-0.2 + 0.2/10) approx #round4(1/(1-0.2 + 0.2/10)) $
+    $ a = 1/(1-0.2 + 0.2/10) = 1/#round4(1 - 0.2 + 0.2 / 10) approx #round4(1 / (1 - 0.2 + 0.2 / 10)) $
   ],
   [
     Case 2:\
@@ -177,7 +179,7 @@ $ a = 1/(1-f_2 + f_2/s) $
         s & = 1.6: && "Acceleration of the " f_2 " fraction"
     $
     Amdahl's Law:
-    $ a = 1/(1-0.5 + 0.5/1.6) approx #round4(1/(1-0.5 + 0.5/1.6)) $
+    $ a = 1/(1-0.5 + 0.5/1.6) approx #round4(1 / (1 - 0.5 + 0.5 / 1.6)) $
   ],
 )
 
@@ -211,22 +213,61 @@ $
   x = (s/100 -1)/(s-1)
 $
 With $s = 128$:
-#let serial_fraction = round2((128/100 -1)/(128-1) * 100 )
+#let serial_fraction = round2((128 / 100 - 1) / (128 - 1) * 100)
 $
-  x = (128/100 -1)/(128-1) approx #round4((128/100 -1)/(128-1)) = underline(underline(#serial_fraction %))
+  x = (128/100 -1)/(128-1) approx #round4((128 / 100 - 1) / (128 - 1)) = underline(underline(#serial_fraction %))
 $
 The maximum serial fraction is $#serial_fraction %$.
 
 = Measure Latency
+Task:\
+Latency is a very important metric for an interconnection network. There are two kinds of latency:
+1. Full round trip: Time between sending (source) and receiving an appropriate response (source).
+  Because different nodes have no shared clock this is the only possibility to determine the time required for a message exchange
+2. Half round-trip: The full round trip latency divided by two. This is usually the amount of time referred to as latency.
+Write a MPI ping-pong test program to measure the round-trip latency. Execute your program both on one node (with two processes) and on two nodes of the exercise-hpdc slurm partition. Choose two idle nodes for measurement. Do your experiments with several message sizes e.g. 1KB, 2KB, 4KB, 8KB, ..., 1MB. Vary the message size within your program. Choose an appropriate number of iterations to yield stable results.
+
+Result: 
 #figure(image("plots/rtt.png"))
+
+Unsurprisingly, as the message size increases, the round trip time and therefore latency also increases. Furthermore, when transferring messages between two nodes the round trip time is consistently an order of magnitude greater than within a single node. Although it being slower is expected, it surprised us that the relative difference between 1 and 2 nodes is similar for large and small messages. Our assumption was that overheads such as time spent checking the message list would play less of a role with larger messages. Future work could include experiments on more complex programs with many simultaneous messages.
+
+Another surprising thing is that for one node, 2 KB messages were on average faster than 1 KB. The logarithmic scale tends to distort how much variance there is when the values are low so this may be up to chance. Further possible causes worthy of investigation include the resolution of the clock used for time measurements, or any potential memory layout quirks MPI might have.
+
 #figure(image("plots/rtt_vs_repetition.png"))
+
+Since we are sending the same message many times over and over, it is important to check if any caching effects are causing artificially good performance. Using two nodes, the results appear stationary, however with a single node the round trip time goes down after about 50 repetitions. We tested the cluster with the exclusive flag so it is unlikely this is due to other processes.
+
 = Measure Bandwidth
-#grid(columns: 2 ,
-figure(image("plots/bandwidth-1.svg")),
-figure(image("plots/bandwidth-2.svg")))
+Antother metric for interconnection networks is bandwidth. Bandwidth describes how much data can be transferred within a given time. 
+To measure bandwidth you have to write another MPI test program called flood test. Send as much data to another process aspossible. You should vary the message size in the same way as described in the previous exercise.\
+Write two flood test programs by using different MPI send operations:
+1. non-blocking send
+2. blocking send
+Execute your  program both on one and two nodes (use the `--exclusive` slurm flag for benchmarking two nodes). Plot your results for several medssage sizes in a graph and interpret them. Choose an appropriate number of iterations to yield stable results. Compare the bandwitdth of blocking MPI send and non-blocking MPI send. Do the same for execution on one and two nodes. Do you observe a difference between message sizes and if so why?
+#grid(
+  columns: 2,
+  figure(image("plots/bandwidth-1.svg")), figure(image("plots/bandwidth-2.svg")),
+)
 
 = Willingness to present
-
+#grid(
+  columns: 2,
+  column-gutter: 1fr,
+    grid(
+      columns: 2,
+      row-gutter:1em,
+      column-gutter: 20pt,
+      [Moore's Law], text(green)[#sym.checkmark],
+      [Amdahl's Law], text(green)[#sym.checkmark],
+  ),
+    grid(
+      columns: 2,
+      row-gutter:1em,
+      column-gutter: 20pt,
+      [Measure Latency] ,text(green)[#sym.checkmark],
+      [Measure Bandwidth], text(green)[#sym.checkmark]),
+)
 
 
 
