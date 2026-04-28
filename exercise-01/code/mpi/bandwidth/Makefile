@@ -5,9 +5,9 @@ DEBUG_FLAGS = -g -Wall -Wextra -DDEBUG
 RELEASE_FLAGS = -O3
 
 # Paths
-SRC = template.cpp
-DEBUG_OUT = template_dbg
-RELEASE_OUT = template
+SRC = main.cpp
+DEBUG_OUT = main_dbg
+RELEASE_OUT = main
 
 # Check if we're in the right directory
 $(if $(wildcard $(SRC)),,$(error Source file $(SRC) not found. Please run make from the directory containing $(SRC)))

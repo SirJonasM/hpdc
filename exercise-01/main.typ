@@ -218,8 +218,12 @@ $
 The maximum serial fraction is $#serial_fraction %$.
 
 = Measure Latency
-
+#figure(image("plots/rtt.png"))
+#figure(image("plots/rtt_vs_repetition.png"))
 = Measure Bandwidth
+#grid(columns: 2 ,
+figure(image("plots/bandwidth-1.svg")),
+figure(image("plots/bandwidth-2.svg")))
 
 = Willingness to present
 

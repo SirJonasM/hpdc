@@ -1,1 +1,6 @@
 **/*.pdf
+.direnv
+.envrc
+.cache
+*.zip
+compile_commands.json
