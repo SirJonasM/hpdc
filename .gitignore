@@ -3,4 +3,5 @@
 .envrc
 .cache
 *.zip
+abgabe
 compile_commands.json

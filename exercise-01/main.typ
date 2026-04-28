@@ -13,7 +13,7 @@
 #show regex("Task \d+:"): strong
 #show "Task:": strong
 #show "Answer:": strong
-#show "Result:": strong
+#show regex("Result.*:"): strong
 #let line2() = line(length: 7%, stroke: 1pt + gray.darken(50%))
 
 #let round4(body) = calc.round(body, digits: 4)
@@ -239,16 +239,23 @@ Another surprising thing is that for one node, 2 KB messages were on average fas
 Since we are sending the same message many times over and over, it is important to check if any caching effects are causing artificially good performance. Using two nodes, the results appear stationary, however with a single node the round trip time goes down after about 50 repetitions. We tested the cluster with the exclusive flag so it is unlikely this is due to other processes.
 
 = Measure Bandwidth
-Antother metric for interconnection networks is bandwidth. Bandwidth describes how much data can be transferred within a given time. 
+Task:\
+Another metric for interconnection networks is bandwidth. Bandwidth describes how much data can be transferred within a given time. 
 To measure bandwidth you have to write another MPI test program called flood test. Send as much data to another process aspossible. You should vary the message size in the same way as described in the previous exercise.\
 Write two flood test programs by using different MPI send operations:
 1. non-blocking send
 2. blocking send
 Execute your  program both on one and two nodes (use the `--exclusive` slurm flag for benchmarking two nodes). Plot your results for several medssage sizes in a graph and interpret them. Choose an appropriate number of iterations to yield stable results. Compare the bandwitdth of blocking MPI send and non-blocking MPI send. Do the same for execution on one and two nodes. Do you observe a difference between message sizes and if so why?
+
+Results:\
 #grid(
   columns: 2,
   figure(image("plots/bandwidth-1.svg")), figure(image("plots/bandwidth-2.svg")),
 )
+
+The bandwidth measurements show that intra-node communication is significantly faster than inter-node, reaching speeds of approximately 8000 MB/s compared to just over 100 MB/s.
+Across both configurations, bandwidth increases with message size before reaching a plateau, likely because the overhead of setting up the transfer becomes less significant relative to the payload size.
+While non-blocking sends generally offer a slight performance edge in local tasks, the difference between blocking and non-blocking methods is much less pronounced when communicating between two separate nodes.
 
 = Willingness to present
 #grid(
