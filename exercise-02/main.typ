@@ -58,8 +58,23 @@
 #align(center, title([Exercise #exnr]))
 = Barrier Synchronization
 = Matrix Multiply
+Task: \
+Implement a naive - i.e. non-optimized - sequential version of the matrix multiply operation.
+Multiply two double-precision floating point matrices.
+Initialize the matrices using random values.
+Use appropriate time measurement functions to measure the execution of the multiply operation itself (i.e., without initialization or output).
+
+Execute the program on one idle node.
+Report the execution time and the achieved GFLOP/s for a matrix multiply of the size 2048x2048 elements.
+
+Explain the huge gap between achieved GFLOP/s and theoretical peak GFLOP/s, in particular which subsystem of this computer is the bottleneck for the execution of this program.
+Optimize your program and overcome the locality problem of this program, explain and implement your idea.
+Execute the improved version, measure again execution time and achieved GFLOP/s. 
+
+* Benchmark Results: *
 #figure(
   table(
+    stroke: 0.5pt,
     columns: 3,
     [Metric], [*Naive*], [*Optimized*],
     [Time (s)], [$45.6315$], [$5.14832$],
@@ -67,6 +82,12 @@
   ),
   caption: [Matrix Multiply $2048 times 2048$],
 )
+
+*Why the huge gap?* \
+The primary issue is Spatial Locality. In the naïve `i,j,k` loop order, the innermost loop iterates over `k`. While this accesses Matrix A row-wise (contiguously), it accesses Matrix B column-wise. Because matrices are stored in row-major order, each increment of `k` jumps an entire row in B. \
+This results in:
+- *Cache Misses:* The CPU cannot effectively use its L1/L2 caches because the required data is not adjacent in memory.
+- *Memory Latency:* The system is forced to constantly fetch new cache lines from the slower RAM, leaving the Floating Point Units (FPUs) idle.
 
 #figure(caption: [Naive implementation], zebraw(
   highlight-lines: (
@@ -87,11 +108,12 @@
   ```,
 ))
 
-*Bottleneck*\
-The primary issue is Spatial Locality. In the naïve `i,j,k` loop order, the innermost loop iterates over `k`. While this accesses Matrix A row-wise (contiguously), it accesses Matrix B column-wise. Because matrices are stored in row-major order, each increment of `k` jumps an entire row in B. \
-This results in:
-- *Cache Misses:* The CPU cannot effectively use its L1/L2 caches because the required data is not adjacent in memory.
-- *Memory Latency:* The system is forced to constantly fetch new cache lines from the slower RAM, leaving the Floating Point Units (FPUs) idle.
+
+*Optimization*\
+We can optimize the access pattern by moving the `j` loop to the innermost position:
++ *Fixed Pointer:* The value `A[i][k]` becomes constant for the duration of the innermost loop.
++ *Linear Access:* Both `B[k][j]` and `C[i][j]` are now accessed by their row index `j`.
++ *Contiguous Loading:* The CPU can now read B and write to C in a perfect linear stream which is more cache friendly and also allows for vector optimizations.
 
 #figure(
   caption: [Optimized implementation],
@@ -118,14 +140,9 @@ This results in:
     ```,
   ),
 )
-*Optimization*\
-We can optimize the access pattern by moving the `j` loop to the innermost position:
-+ *Fixed Pointer:* The value `A[i][k]` becomes constant for the duration of the innermost loop.
-+ *Linear Access:* Both `B[k][j]` and `C[i][j]` are now accessed by their row index `j`.
-+ *Contiguous Loading:* The CPU can now read B and write to C in a perfect linear stream which is more cache friendly and also allows for vector optimizations.
 
 Results:
-As shown in the table, reordering the loops reduced the execution time from $45.63"s"$ to $5.15"s"$, improving performance by approximately $8.8 times$ simply by making the algorithm "cache-friendly."
+As shown in the table, reordering the loops reduced the execution time from $45.63"s"$ to $5.15"s"$, improving performance by approximately 8.8x simply by making the algorithm "cache-friendly."
 = Willingness to present
 #grid(
   columns: 2,
@@ -136,13 +153,6 @@ As shown in the table, reordering the loops reduced the execution time from $45.
     column-gutter: 20pt,
     [Ex 1], text(green)[#sym.checkmark],
     [Ex 2], text(green)[#sym.checkmark],
-  ),
-  grid(
-    columns: 2,
-    row-gutter: 1em,
-    column-gutter: 20pt,
-    [Ex 3], text(green)[#sym.checkmark],
-    [Ex 4], text(green)[#sym.checkmark],
   ),
 )
 
