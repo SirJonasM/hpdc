@@ -1,0 +1,4 @@
+Matrix Size: 2048x2048
+Algorithm: Naive
+Time to multiply: 45.6315 seconds
+Performance:      0.376492 GFLOP/s

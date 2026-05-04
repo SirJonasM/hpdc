@@ -1,0 +1,4 @@
+Matrix Size: 2048x2048
+Algorithm: Tiling (4)
+Time to multiply: 7.17496 seconds
+Performance:      2.39442 GFLOP/s

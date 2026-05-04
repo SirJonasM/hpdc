@@ -1,0 +1,4 @@
+Matrix Size: 2048x2048
+Algorithm: Cache Optimized
+Time to multiply: 5.14832 seconds
+Performance:      3.33698 GFLOP/s
