@@ -107,16 +107,17 @@
           '';
         };
         ci = pkgs.mkShell {
-          fonts.fontDir.enable = true;
-          fonts.packages = with pkgs; [
+          buildInputs = with pkgs; [
+            typst
             libertinus
             nerd-fonts.iosevka
             nerd-fonts.iosevka-term
           ];
-          buildInputs = with pkgs; [
-            typst
-          ];
-          shellHook = "echo --- CI Build Shell ---";
+          shellHook = ''
+			export TYPST_FONT_PATHS="${pkgs.nerd-fonts.iosevka}/share/fonts/truetype/NerdFonts/Iosevka:${pkgs.libertinus}/share/fonts/opentype"
+			echo --- CI Build Shell ---
+			typst fonts
+			'';
         };
       };
     };
