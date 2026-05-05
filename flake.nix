@@ -88,8 +88,8 @@
             bear
             typst
             tinymist
-			libertinus
-			nerd-fonts.iosevka
+            libertinus
+            nerd-fonts.iosevka
             (python3.withPackages (
               ps: with ps; [
                 pandas
@@ -106,14 +106,18 @@
             		  echo "- new-exercise"
           '';
         };
-      ci = pkgs.mkShell {
-        buildInputs = with pkgs; [
-			libertinus
-			nerd-fonts.iosevka
-			typst
-        ];
-        shellHook = "echo --- CI Build Shell ---";
-      };
+        ci = pkgs.mkShell {
+          fonts.fontDir.enable = true;
+          fonts.packages = with pkgs; [
+            libertinus
+            nerd-fonts.iosevka
+            nerd-fonts.iosevka-term
+          ];
+          buildInputs = with pkgs; [
+            typst
+          ];
+          shellHook = "echo --- CI Build Shell ---";
+        };
       };
     };
 }

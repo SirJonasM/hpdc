@@ -59,7 +59,7 @@
 = Barrier Synchronization
 = Matrix Multiply
 Task: \
-Implement a naive - i.e. non-optimized - sequential version of the matrix multiply operation.
+Implement a naïve - i.e. non-optimized - sequential version of the matrix multiply operation.
 Multiply two double-precision floating point matrices.
 Initialize the matrices using random values.
 Use appropriate time measurement functions to measure the execution of the multiply operation itself (i.e., without initialization or output).
@@ -142,7 +142,7 @@ We can optimize the access pattern by moving the `j` loop to the innermost posit
 )
 
 Results:
-As shown in the table, reordering the loops reduced the execution time from $45.63"s"$ to $5.15"s"$, improving performance by approximately 8.8x simply by making the algorithm "cache-friendly."
+As shown in the table, reordering the loops reduced the execution time from $45.63"s"$ to $5.15"s"$, improving performance by approximately 8.8x.
 = Willingness to present
 #grid(
   columns: 2,
