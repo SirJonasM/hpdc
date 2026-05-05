@@ -22,7 +22,7 @@
 #let round2(body) = calc.round(body, digits: 2)
 
 #set text(
-  font: "New Computer Modern",
+  font: "Libertinus Serif",
   size: 11pt,
 )
 #show raw: set text(font: "Iosevka NF")

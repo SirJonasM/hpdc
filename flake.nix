@@ -88,6 +88,8 @@
             bear
             typst
             tinymist
+			libertinus
+			nerd-fonts.iosevka
             (python3.withPackages (
               ps: with ps; [
                 pandas
@@ -106,7 +108,9 @@
         };
       ci = pkgs.mkShell {
         buildInputs = with pkgs; [
-          typst
+			libertinus
+			nerd-fonts.iosevka
+			typst
         ];
         shellHook = "echo --- CI Build Shell ---";
       };

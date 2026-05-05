@@ -20,17 +20,14 @@ jobs:
       - name: Compile Exercises
         run: |
           nix develop .#ci --command bash -c '
-            # Create an output directory for the PDFs
             mkdir -p artifacts
+            unset SOURCE_DATE_EPOCH
             
-            # Loop through all exercise directories
             for dir in exercise-*; do
               if [ -d "$dir" ] && [ -f "$dir/main.typ" ]; then
-                # Extract the number (e.g., exercise-01 -> 01)
                 num=$(echo "$dir" | cut -d"-" -f2)
                 echo "Processing $dir as hpdc-$num.pdf..."
                 
-                # Compile using the typst provided by the ci shell
                 typst compile "$dir/main.typ" "artifacts/hpdc-$num.pdf"
               fi
             done
