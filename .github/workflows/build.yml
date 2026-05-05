@@ -1,0 +1,43 @@
+name: Build Typst Documents
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Compile Exercises
+        run: |
+          nix develop .#ci --command bash -c '
+            # Create an output directory for the PDFs
+            mkdir -p artifacts
+            
+            # Loop through all exercise directories
+            for dir in exercise-*; do
+              if [ -d "$dir" ] && [ -f "$dir/main.typ" ]; then
+                # Extract the number (e.g., exercise-01 -> 01)
+                num=$(echo "$dir" | cut -d"-" -f2)
+                echo "Processing $dir as hpdc-$num.pdf..."
+                
+                # Compile using the typst provided by the ci shell
+                typst compile "$dir/main.typ" "artifacts/hpdc-$num.pdf"
+              fi
+            done
+          '
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpdc-compiled-pdfs
+          path: artifacts/*.pdf

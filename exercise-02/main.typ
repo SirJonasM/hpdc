@@ -155,7 +155,3 @@ As shown in the table, reordering the loops reduced the execution time from $45.
     [Ex 2], text(green)[#sym.checkmark],
   ),
 )
-
-
-
-

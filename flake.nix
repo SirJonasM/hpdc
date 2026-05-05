@@ -5,46 +5,17 @@
   };
 
   outputs =
-    { self, nixpkgs, ... }:
+    {
+      self,
+      nixpkgs,
+      ...
+    }:
     let
       system = "x86_64-linux";
-      pkgs = import nixpkgs { inherit system; };
-      lib = pkgs.lib;
+      pkgs = import nixpkgs {
+        inherit system;
+      };
 
-      # Helper to build a single typst folder with custom naming
-      buildExercise =
-        dirName:
-        let
-          # Extracts the number from "exercise-01" -> "01"
-          # This assumes your folders are named "exercise-XX"
-          exNumber = lib.last (lib.splitString "-" dirName);
-          outputName = "hpdc-${exNumber}.pdf";
-        in
-        pkgs.stdenv.mkDerivation {
-          pname = dirName;
-          version = "0.1.0";
-          src = ./.;
-
-          buildInputs = [ pkgs.typst ];
-
-          buildPhase = ''
-            cd ${dirName}
-            # Compile main.typ into the specifically formatted hpdc-XX.pdf
-            typst compile main.typ ${outputName}
-          '';
-
-          installPhase = ''
-            mkdir -p $out
-            cp ${outputName} $out/
-          '';
-        };
-
-      # Automatically find directories named "exercise-*" containing "main.typ"
-      exerciseDirs = builtins.filter (
-        name: (lib.hasPrefix "exercise-" name) && (builtins.pathExists (./. + "/${name}/main.typ"))
-      ) (builtins.attrNames (builtins.readDir ./.));
-
-      exercisePackages = lib.genAttrs exerciseDirs (name: buildExercise name);
       new-exercise = pkgs.writeShellScriptBin "new-exercise" ''
                 # Direnv sets the DIRENV_DIR variable. 
                 # We strip the leading '-' to get the actual path.
@@ -106,16 +77,9 @@
 
     in
     {
-      # Output packages: nix build .#exercise-01 or nix build
-      packages.${system} = exercisePackages // {
-        default = pkgs.symlinkJoin {
-          name = "all-exercises";
-          paths = builtins.attrValues exercisePackages;
-        };
-      };
-
       devShells.${system} = {
         default = pkgs.mkShell {
+          # Typix provides a helper to create a shell with all dependencies
           buildInputs = with pkgs; [
             openmpi
             rsync
@@ -123,6 +87,7 @@
             new-exercise
             bear
             typst
+            tinymist
             (python3.withPackages (
               ps: with ps; [
                 pandas
@@ -139,10 +104,12 @@
             		  echo "- new-exercise"
           '';
         };
+      ci = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          typst
+        ];
+        shellHook = "echo --- CI Build Shell ---";
       };
-	  ci = pkgs.mkShell {
-		buildInputs = [ pkgs.typst ];
-		shellHook = '' echo --- CI Build Shell ---'';
-	  };
+      };
     };
 }
