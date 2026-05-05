@@ -57,6 +57,22 @@
 
 #align(center, title([Exercise #exnr]))
 = Barrier Synchronization
+Task:\
+Now we want to measure the performance of an MPI barrier. First implement your own barrier, either a centralized barrier or a tree-based barrier.
+It's your choice, however a centralized barrier might be easier to implement. Your choice won't have an impact on achievable points. \
+Write a suitable test program to measure the performance of your own barrier implementations. For this purpose call the barrier within a for-loop and measure the overall time of the loop. The number of iterations should be passed to the program as a command line parameter. 
+Use a sufficient number of iterations to get stable results. Report average barrier latency (loop execution time divided by the number of iterations) for 2,4,6,...,24 processes.
+Do the same measurments with the MPI built-in barrier. Compare the performance and plot both results in one graph.
+
+Results:\
+The custom barrier is centralized, meaning rank 0 is responsible for coordination. Rank $0$ first waits for a message containing a single integer to be received from every other rank. The moment this happens, the ranks are synchronized. A broadcast is used to notify all other ranks.
+
+The fan-in is $cal(O)(n)$ (this could be optimized further). However, the fan-out uses the built in broadcast. Which likely implements a tree to get $cal(O)(log n)$.
+
+#figure(image("plots/2_1_latency.png", width: 60%))
+
+Both implementations have a linear relationship between the process count and latency. Surprisingly, the custom barrier has lower latency compared to the built in version at large numbers of processes. One theory for why this might be is that the test conditions of running the barrier in a loop are not representative of the real world. Usually barriers are used sparingly to minimise the amount of time processes wait. `MPI_Barrier()` was probably developed with this in mind. Whereas in our custom implementation MPI might be smart enough to cache or prioritize sends or broadcasts that happen often. Future work could include testing these barriers embedded in some more complex programs.
+
 = Matrix Multiply
 Task: \
 Implement a naïve - i.e. non-optimized - sequential version of the matrix multiply operation.
@@ -151,7 +167,7 @@ As shown in the table, reordering the loops reduced the execution time from $45.
     columns: 2,
     row-gutter: 1em,
     column-gutter: 20pt,
-    [Ex 1], text(green)[#sym.checkmark],
-    [Ex 2], text(green)[#sym.checkmark],
+    [Ex 1 - Barrier Synchronization], text(green)[#sym.checkmark],
+    [Ex 2 - Matrix Multiply], text(green)[#sym.checkmark],
   ),
 )

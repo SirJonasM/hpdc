@@ -100,10 +100,11 @@
           ];
 
           shellHook = ''
-                      echo "--- MPI Development Shell ---"
-            		  echo "Commands: "
-            		  echo "- sync-project"
-            		  echo "- new-exercise"
+			export TYPST_FONT_PATHS="${pkgs.nerd-fonts.iosevka}/share/fonts/truetype/NerdFonts/Iosevka:${pkgs.libertinus}/share/fonts/opentype"
+			echo "--- MPI Development Shell ---"
+			echo "Commands: "
+			echo "- sync-project"
+			echo "- new-exercise"
           '';
         };
         ci = pkgs.mkShell {
