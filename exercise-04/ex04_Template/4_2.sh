@@ -3,7 +3,7 @@
 ########################################################################
 # This is a template for running an MPI program on the CSG cluster.
 # To use this template, call it with the following command:
-# sbatch 2_1.sh
+# sbatch 4_2.sh
 ########################################################################
 
 
@@ -11,8 +11,8 @@
 #SBATCH --partition exercise-hpdc   # partition name, for HPDC, use exercise-hpdc
 ##SBATCH --exclusive                # FOR BENCHMARKING: remove the trailing # to request exclusive access nodes
 #SBATCH --nodes 1                   # number of nodes
-#SBATCH --ntasks 2                  # total number of tasks (processes)
-# SBATCH --ntasks-per-node 2         # OPTIONAL for more control: number of tasks per node, ensure that nodes*ntasks-per-node == ntasks
+#SBATCH --ntasks 1                  # total number of tasks (processes)
+# SBATCH --ntasks-per-node 1         # OPTIONAL for more control: number of tasks per node, ensure that nodes*ntasks-per-node == ntasks
 # SBATCH --cpus-per-task 1           # OPTIONAL for more control: number of processors per task
 #SBATCH --ntasks-per-core 1         # maximum number of tasks per core, this is the default
 #SBATCH --time 00:30:00             # time limit (hh:mm:ss)
@@ -24,28 +24,11 @@ echo "ntasks:" $SLURM_NTASKS
 echo "nodes:" $SLURM_JOB_NODELIST
 
 # options for the number of nodes and tasks are set automatically by slurm, for more information on changing options yourself, see: https://docs.open-mpi.org/en/v5.0.x/man-openmpi/man1/mpirun.1.html#launch-options
-mpirun ./bin/exercise1
-
-####################################################################################################################################
-#example structure how you could do your .sh files
-####################################################################################################################################
-sizes="2 4 6 8 10 12 14 16 18 20 22 24"
-
-# Create headline for output csv
-echo "processes, custom_latency_ms, built_in_latency_ms" > 2_1.csv
-
-for size in $sizes; do
-    output_custom=$(mpirun --oversubscribe -np $size ./bin/exercise1 --custom)
-    echo "$output_custom"
-    latency_custom=`echo "$output_custom" | awk '/Custom Barrier Time:/ {print $4}'`
-
-    output_built_in=$(mpirun --oversubscribe -np $size ./bin/exercise1 --built-in)
-    echo "$output_built_in"
-    latency_built_in=`echo "$output_built_in" | awk '/Built-In Barrier Time:/ {print $4}'`
-
-    echo "$size, $latency_custom, $latency_built_in" >> 2_1.csv
+#you can reuse the program of 4_1 in this exercise, but if you want you could also do a new 4_2.cpp and add it in the Make/SH file
+for i in 128 256 512 1024 2048 4096 8192; do 
+  mpirun bin/4_1 "$i" 100 0
 done
-#####################################################################################################################################
+
 
 # To get information about the mapping of tasks to cores and nodes, you can use the following command:
-# mpirun --display-map template sample_cli_parameter
+# mpirun --display-map 4_1 sample_cli_parameter

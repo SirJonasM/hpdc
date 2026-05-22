@@ -1,4 +1,4 @@
-#let exnr = "2"
+#let exnr = "1"
 #let authors = (
   "Jonas Möwes",
   "Daubner, Andy",
@@ -275,7 +275,5 @@ While non-blocking sends generally offer a slight performance edge in local task
       [Measure Latency] ,text(green)[#sym.checkmark],
       [Measure Bandwidth], text(green)[#sym.checkmark]),
 )
-
-
 
 
