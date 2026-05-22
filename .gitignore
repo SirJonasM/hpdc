@@ -6,3 +6,5 @@
 abgabe
 compile_commands.json
 build
+*.gif
+*.ppm

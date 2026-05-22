@@ -69,6 +69,8 @@
           --exclude='.envrc' \
           --exclude='.gitignore' \
           --exclude='.venv' \
+          --exclude='*.ppm' \
+          --exclude='*.gif' \
           --exclude='compile_commands.json' \
           "$PROJECT_ROOT/" "hpc:/csghome/hpdc06/jonas/exercises/"
 
