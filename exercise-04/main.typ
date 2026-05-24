@@ -262,7 +262,7 @@ The configuration is the same ass before, but this time the goal is to paralleli
 }
 
 #let data-4-5 = parse_data_4_5("plots/4_5.csv")
-#let colors = (blue, red, red, green, orange, purple)
+#let colors = (blue, red, yellow, green, rgb("#b10dc9"), purple, orange)
 
 #cetz.canvas({
   plot.plot(
@@ -299,26 +299,27 @@ The configuration is the same ass before, but this time the goal is to paralleli
           .filter(row => row.world-size == group.world-size and row.nodes == group.nodes)
           .map(row => (row.N, row.time))
 
-        let style = if group.nodes == 1 {
-          (style: (stroke: (paint: colors.at(calc.rem(index, 6)), dash: "solid", thickness: 1.5pt)))
+        let style = (stroke: (paint: colors.at(calc.rem(index, 7)), dash: "solid", thickness: 1.0pt))
+        if group.nodes == 1 {
+          style.stroke.dash = "solid"
         } else if group.nodes == 2 {
-          (style: (stroke: (paint: colors.at(calc.rem(index, 6)), dash: "dotted", thickness: 1.5pt)))
+          style.stroke.dash  = "dashed"
         } else if group.nodes == 4 {
-          (style: (stroke: (paint: colors.at(calc.rem(index, 6)), dash: "dashed", thickness: 1.5pt)))
+          style.stroke.dash = "dotted"
         }
         plot.add(group-data, label: str(group.world-size) + "|" + str(group.nodes), style: style)
         index = index + 1
       }
       plot.add(
         domain: (128, 8192),
-        style: (stroke: (paint: gray, dash: "dotted", thickness: 1.5pt)),
+        style: (stroke: (paint: black, dash: "dotted", thickness: 1.0pt)),
         label: [Ideal $O(N)$],
         axes: ("x", "y"),
         x => data-4-5.at(0).time * x / data-4-5.at(0).N,
       )
       plot.add(
         domain: (128, 8192),
-        style: (stroke: (paint: gray, dash: "dashed", thickness: 1.5pt)),
+        style: (stroke: (paint: black, dash: "dashed", thickness: 1.0pt)),
         label: [Ideal $O(N^2)$],
         axes: ("x", "y"),
         x => data-4-5.at(0).time * calc.pow(x / float(data-4-5.at(0).N), 2),
@@ -356,12 +357,13 @@ The configuration is the same ass before, but this time the goal is to paralleli
           .filter(row => row.world-size == group.world-size and row.nodes == group.nodes)
           .map(row => (row.N, row.flops))
 
-        let style = if group.nodes == 1 {
-          (style: (stroke: (paint: colors.at(calc.rem(index, 6)), dash: "solid", thickness: 1.5pt)))
+        let style = (stroke: (paint: colors.at(calc.rem(index, 7)), dash: "solid", thickness:1.0pt))
+        if group.nodes == 1 {
+          style.stroke.dash = "solid"
         } else if group.nodes == 2 {
-          (style: (stroke: (paint: colors.at(calc.rem(index, 6)), dash: "dotted", thickness: 1.5pt)))
+          style.stroke.dash  = "dashed"
         } else if group.nodes == 4 {
-          (style: (stroke: (paint: colors.at(calc.rem(index, 6)), dash: "dashed", thickness: 1.5pt)))
+          style.stroke.dash = "dotted"
         }
         plot.add(group-data, label: str(group.world-size) + "|" + str(group.nodes), style: style)
         index = index + 1
