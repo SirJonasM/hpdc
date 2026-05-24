@@ -23,7 +23,10 @@
 
 #let round4(body) = calc.round(body, digits: 4)
 #let round2(body) = calc.round(body, digits: 2)
-
+#show math.equation: set text(
+  font: "New Computer Modern Math",
+  size: 11pt,
+)
 #set text(
   font: "New Computer Modern",
   size: 11pt,
@@ -303,7 +306,7 @@ The configuration is the same ass before, but this time the goal is to paralleli
         if group.nodes == 1 {
           style.stroke.dash = "solid"
         } else if group.nodes == 2 {
-          style.stroke.dash  = "dashed"
+          style.stroke.dash = "dashed"
         } else if group.nodes == 4 {
           style.stroke.dash = "dotted"
         }
@@ -357,11 +360,11 @@ The configuration is the same ass before, but this time the goal is to paralleli
           .filter(row => row.world-size == group.world-size and row.nodes == group.nodes)
           .map(row => (row.N, row.flops))
 
-        let style = (stroke: (paint: colors.at(calc.rem(index, 7)), dash: "solid", thickness:1.0pt))
+        let style = (stroke: (paint: colors.at(calc.rem(index, 7)), dash: "solid", thickness: 1.0pt))
         if group.nodes == 1 {
           style.stroke.dash = "solid"
         } else if group.nodes == 2 {
-          style.stroke.dash  = "dashed"
+          style.stroke.dash = "dashed"
         } else if group.nodes == 4 {
           style.stroke.dash = "dotted"
         }
@@ -373,6 +376,11 @@ The configuration is the same ass before, but this time the goal is to paralleli
 })
 
 #let plot_nodes_fix_N(N) = cetz.canvas({
+  let legend = if N == 128 {
+    "inner-north-east"
+  }else {
+    "inner-north-west"
+  }
   let data = data-4-5.filter(row => row.N == N)
 
   let unique-worlds = data.map(row => row.world-size).dedup().sorted()
@@ -391,7 +399,7 @@ The configuration is the same ass before, but this time the goal is to paralleli
 
   plot.plot(
     size: (7, 6),
-    legend: "inner-north-west",
+    legend:legend,
     x-label: [Nodes],
     x-tick-step: none,
     x-ticks: grouped-data.map(row => row.nodes-id).dedup(),
@@ -420,6 +428,11 @@ The configuration is the same ass before, but this time the goal is to paralleli
 })
 
 #let plot_world_size_fix_N(N) = cetz.canvas({
+  let legend = if N == 128 {
+    "inner-north-east"
+  }else {
+    "inner-north-west"
+  }
   let data = data-4-5.filter(row => row.N == N)
 
   let unique-worlds = data.map(row => row.world-size).dedup().sorted()
@@ -438,7 +451,7 @@ The configuration is the same ass before, but this time the goal is to paralleli
 
   plot.plot(
     size: (7, 6),
-    legend: "inner-north-west",
+    legend:legend,
     x-label: [World size],
     x-tick-step: none,
     x-ticks: grouped-data.map(row => row.world-id).dedup(),
@@ -477,6 +490,184 @@ From the previous analysis we see that for $N = 8192$ the best performance was a
 So we will plot the speedup using that.
 and we will also plot 24 worlds and 4 nodes as that was the maximum.
 
+#let data-speedup = {
+  let par1-map = (:)
+  let par4-map = (:)
+
+  for row in data-4-5 {
+    if row.world-size == 24 {
+      if row.nodes == 1 { par1-map.insert(str(row.N), row) } else if row.nodes == 4 { par4-map.insert(str(row.N), row) }
+    }
+  }
+  let data-seq = data-4-2.sorted(key: row => row.N)
+
+  data-seq.map(seq-row => {
+    let key = str(seq-row.N)
+    let p1 = par1-map.at(key, default: none)
+    let p4 = par4-map.at(key, default: none)
+
+    (
+      N: seq-row.N,
+      seq-time: seq-row.time,
+      par-24-1-time: p1.time,
+      par-24-4-time: p4.time,
+      seq-gflops: seq-row.flops / 1e9,
+      par-24-1-gflops: p1.flops,
+      par-24-4-gflops: p4.flops,
+    )
+  })
+}
+
+#figure(
+  cetz.canvas({
+    plot.plot(
+      size: (8, 6),
+      legend: "inner-north-west",
+      x-tick-step: none,
+      // Dynamic ticks using the sorted N keys from your new data structure
+      x-ticks: data-speedup.map(row => row.N),
+      x-format: value => {
+        if value == 0 { return [0] }
+        let exp = calc.log(value, base: 2)
+        [$2^#int(exp)$]
+      },
+      x-mode: "log",
+      x-base: 2.0,
+      x-grid: true,
+      x-label: [Grid Size ($N$)],
+
+      // Primary Y Axis: Time (Logarithmic)
+      y-mode: "log",
+      y-ticks: (0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0),
+      y-tick-step: none,
+      y-grid: true,
+      y-label: [Time (seconds)],
+      y-format: value => {
+        if value == 0 { return [0] }
+        let exp = calc.log(value, base: 10)
+        [$10^#int(exp)$]
+      },
+      // Secondary Y Axis: Performance (Linear)
+      y2-min: 0.0,
+      y2-label: [Performance (GFLOP/s)],
+      y2-format: value => {
+        if value == 0.0 { return [] }
+        num(value, digits: 1)
+      },
+
+      {
+        // ----------------------------------------------------------------
+        // 1. PERFORMANCE PLOTS (GFLOP/s) -> Mapped to Secondary Y-Axis ("y2")
+        // ----------------------------------------------------------------
+        plot.add(
+          data-speedup.map(row => (row.N, row.seq-gflops)),
+          label: "base perf",
+          style: (stroke: (paint: blue, dash: "dashed", thickness: 1.5pt)),
+          axes: ("x", "y2"),
+          mark: "x",
+          mark-style: (stroke: blue, size: 0.15),
+        )
+        plot.add(
+          data-speedup.map(row => (row.N, row.par-24-1-gflops)),
+          label: "1 node perf",
+          style: (stroke: (paint: orange, dash: "dashed", thickness: 1.5pt)),
+          axes: ("x", "y2"),
+          mark: "x",
+          mark-style: (stroke: orange, size: 0.15),
+        )
+        plot.add(
+          data-speedup.map(row => (row.N, row.par-24-4-gflops)),
+          label: "4 nodes perf",
+          style: (stroke: (paint: red, dash: "dashed", thickness: 1.5pt)),
+          axes: ("x", "y2"),
+          mark: "x",
+          mark-style: (stroke: red, size: 0.15),
+        )
+
+        // ----------------------------------------------------------------
+        // 2. TIME PLOTS (Seconds) -> Mapped to Primary Y-Axis ("y")
+        // ----------------------------------------------------------------
+        plot.add(
+          data-speedup.map(row => (row.N, row.seq-time)),
+          label: "base time",
+          style: (stroke: blue + 1.5pt),
+          axes: ("x", "y"),
+          mark: "o",
+          mark-style: (fill: blue.transparentize(80%), size: 0.001, stroke: blue),
+        )
+        plot.add(
+          data-speedup.map(row => (row.N, row.par-24-1-time)),
+          label: "1 node time",
+          style: (stroke: orange + 1.5pt),
+          axes: ("x", "y"),
+          mark: "o",
+          mark-style: (fill: orange.transparentize(80%), size: 0.001, stroke: orange),
+        )
+        plot.add(
+          data-speedup.map(row => (row.N, row.par-24-4-time)),
+          label: "4 nodes time",
+          style: (stroke: red + 1.5pt),
+          axes: ("x", "y"),
+          mark: "o",
+          mark-style: (fill: red.transparentize(80%), size: 0.001, stroke: red),
+        )
+      },
+    )
+  }),
+  caption: [Performance scaling and execution times for sequential vs parallel heat relaxation configs.],
+) <fig-speedup>
+
+#figure(
+  cetz.canvas({
+    plot.plot(
+      size: (8, 5.5),
+      legend: "inner-north-west",
+      x-tick-step: none,
+      x-ticks: data-speedup.map(row => row.N),
+      x-format: value => {
+        if value == 0 { return [0] }
+        let exp = calc.log(value, base: 2)
+        [$2^#int(exp)$]
+      },
+      x-mode: "log",
+      x-base: 2.0,
+      x-grid: true,
+      x-label: [Grid Size ($N$)],
+
+      // Speedup axis (Linear, usually starting at 0 or 1)
+      y-min: 0.0,
+      y-grid: true,
+      y-label: [Speedup ($T_"seq" / T_"par"$)],
+
+      {
+        plot.add(
+          data-speedup.map(row => (row.N, 1.0)),
+          label: "base",
+          style: (stroke: (paint: gray, dash: "dashed", thickness: 1.5pt)),
+        )
+
+        // 2. Parallel - 1 Node Speedup
+        plot.add(
+          data-speedup.map(row => (row.N, row.seq-time / row.par-24-1-time)),
+          label: "1 node",
+          style: (stroke: (paint: red, thickness: 2pt)),
+          mark: "o",
+          mark-style: (fill: red.transparentize(80%), size: 0.001, stroke: red),
+        )
+
+        // 3. Parallel - 4 Nodes Speedup
+        plot.add(
+          data-speedup.map(row => (row.N, row.seq-time / row.par-24-4-time)),
+          label: "4 nodes",
+          style: (stroke: blue + 1.5pt),
+          mark: "o",
+          mark-style: (fill: blue.transparentize(80%), size: 0.001, stroke: blue),
+        )
+      },
+    )
+  }),
+  caption: [Speedup analysis of parallel implementations (1 and 4 nodes) relative to sequential execution across increasing grid sizes ($N$).],
+) <fig-speedup-analysis>
 
 = Willingness to present
 #grid(
