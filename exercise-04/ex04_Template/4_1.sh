@@ -24,7 +24,7 @@ echo "ntasks:" $SLURM_NTASKS
 echo "nodes:" $SLURM_JOB_NODELIST
 
 # options for the number of nodes and tasks are set automatically by slurm, for more information on changing options yourself, see: https://docs.open-mpi.org/en/v5.0.x/man-openmpi/man1/mpirun.1.html#launch-options
-mpirun bin/4_1 64 300 10
+mpirun bin/4_1 64 300 0 10
 magick -delay 10 -loop 0 image/heatmap_*.ppm simulation.gif
 
 

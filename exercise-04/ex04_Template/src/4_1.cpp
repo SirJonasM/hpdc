@@ -5,80 +5,43 @@
 #include <iomanip>
 #include <iostream>
 #include <mpi.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include <time.h>
 #include <vector>
+#include "heat_shared.h"
 
-void save_heatmap_image(const std::vector<std::vector<double>> &grid,
-                        const std::string &filename) {
-  int N = grid.size();
-  std::ofstream outFile(filename);
+void iteration_tiled(const std::vector<double> &grid,
+                     std::vector<double> &grid_new, int N, int tile_size) {
+  int tiles_x = (N + tile_size - 1) / tile_size;
+  int tiles_y = (N + tile_size - 1) / tile_size;
 
-  if (!outFile.is_open()) {
-    std::cerr << "Error opening file for writing image!\n";
-    return;
-  }
+  for (int t_x = 0; t_x < tiles_x; ++t_x) {
+    for (int t_y = 0; t_y < tiles_y; ++t_y) {
 
-  outFile << "P3\n" << N << " " << N << "\n255\n";
+      int x_start = std::max(1, t_x * tile_size);
+      int x_end = std::min(N - 1, (t_x + 1) * tile_size);
 
-  for (int x = 0; x < N; ++x) {
-    for (int y = 0; y < N; ++y) {
-      double temp = grid[x][y];
-      double normalized = std::clamp(temp / 127.0, 0.0, 1.0);
+      int y_start = std::max(1, t_y * tile_size);
+      int y_end = std::min(N - 1, (t_y + 1) * tile_size);
 
-      int r = static_cast<int>(normalized * 255);
-      int g = 0;
-      int b = static_cast<int>((1.0 - normalized) * 255);
+      for (int x = x_start; x < x_end; ++x) {
+        for (int y = y_start; y < y_end; ++y) {
 
-      outFile << r << " " << g << " " << b << "  ";
-    }
-    outFile << "\n";
-  }
+          double self = grid[x * N + y];
+          double left = grid[(x - 1) * N + y];
+          double top = grid[x * N + y - 1];
+          double right = grid[(x + 1) * N + y];
+          double bottom = grid[x * N + y + 1];
 
-  outFile.close();
-}
-
-void heat_map(const std::vector<std::vector<double>> grid) {
-  int N = grid.size();
-
-  for (int x = 0; x < N; ++x) {
-    int N1 = grid[x].size();
-    for (int y = 0; y < N1; ++y) {
-      std::cout << grid[x][y] << " ";
-    }
-    std::cout << "\n";
-  }
-}
-
-const double FACTOR = (24.0 / 100.0);
-const double SELF_FACTOR = 1.0 - 4.0 * FACTOR;
-
-double heat_calc(double self, double left, double top, double right,
-                 double bottom) {
-  double val = self + FACTOR * (-4.0 * self + left + top + right + bottom);
-  return std::clamp(val, 0.0, 127.0);
-}
-
-inline double step(const std::vector<std::vector<double>> &grid, int x, int y) {
-  // Rewritten to use multiply add instruction
-  double self = grid[x][y];
-  double neighbors =
-      grid[x][y - 1] + grid[x - 1][y] + grid[x][y + 1] + grid[x + 1][y];
-  return (FACTOR * neighbors) + (SELF_FACTOR * self);
-}
-void iteration(const std::vector<std::vector<double>> &grid,
-               std::vector<std::vector<double>> &grid_new) {
-  for (int x = 1; x < grid.size() - 1; ++x) {
-    for (int y = 1; y < grid.size() - 1; ++y) {
-      grid_new[x][y] = step(grid, x, y);
+          grid_new[x * N + y] = calculate(self, left, top, right, bottom);
+        }
+      }
     }
   }
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 4) {
+  if (argc < 5) {
     std::cout << "Usage: " << argv[0]
               << " <N> <i:iterations> <v:visualization>\n";
     return 1;
@@ -92,48 +55,72 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   if (rank != 0) {
     MPI_Finalize();
+    return 0;
   }
   int N = std::stoi(argv[1]);
   int iterations = std::stoi(argv[2]);
-  int vis = std::stoi(argv[3]);
+  int tiling = std::stoi(argv[3]);
+  int vis = std::stoi(argv[4]);
 
-  std::vector<std::vector<double>> grid(N, std::vector<double>(N, 0.0));
-  std::vector<std::vector<double>> grid_new(N, std::vector<double>(N, 0.0));
+  std::vector<double> grid(N * N, 0.0);
+  std::vector<double> grid_new(N * N, 0.0);
 
   for (int i = N / 4; i < (3 * N) / 4; ++i) {
-    grid[0][i] = 127.0;
-    grid_new[0][i] = 127.0;
+    grid[i] = 127.0;
+    grid_new[i] = 127.0;
   }
 
-  chTimerTimestamp time1 = {};
-  chTimerTimestamp timeEnd = {};
-  double time = 0.0;
+  chTimerTimestamp time_start = {};
+  chTimerTimestamp time_end = {};
+  double time_sequential = 0.0;
+  double time_tiling = 0.0;
   for (int t = 0; t < iterations; t++) {
-    chTimerGetTime(&time1);
-    iteration(grid, grid_new);
-    chTimerGetTime(&timeEnd);
-    time += chTimerElapsedTime(&time1, &timeEnd);
+
+    chTimerGetTime(&time_start);
+    iteration(grid, grid_new, N);
+    chTimerGetTime(&time_end);
+    time_sequential += chTimerElapsedTime(&time_start, &time_end);
+
+    if (tiling != 0) {
+      chTimerGetTime(&time_start);
+      iteration_tiled(grid, grid_new, N, tiling);
+      chTimerGetTime(&time_end);
+      time_tiling += chTimerElapsedTime(&time_start, &time_end);
+    }
+
     if (vis != 0 && t % vis == 0) {
       std::ostringstream ss;
       ss << "image/" << "heatmap_" << std::setfill('0') << std::setw(4) << t
          << ".ppm";
       std::string filename = ss.str();
-      save_heatmap_image(grid_new, filename);
+      save_heatmap_image(grid_new, filename, N);
     }
     std::swap(grid, grid_new);
   }
-  double time_per_iteration = time / static_cast<double>(iterations);
-  double total_flops = ((N - 2) * (N - 2) * 7.0 * iterations);
-  double flops = total_flops / time;
-  std::ofstream outFile("4_2.csv", std::ios::app);
 
+  std::ofstream outFile("4_2.csv", std::ios::app);
   if (!outFile.is_open()) {
     std::cerr << "Error opening file for writing image!";
     MPI_Finalize();
     return 0;
   }
-  outFile << N << "," << time_per_iteration << "," << total_flops << ","
-          << flops << std::endl;
+
+  double time_per_iteration = time_sequential / static_cast<double>(iterations);
+  double total_flops = ((N - 2) * (N - 2) * 6.0 * iterations);
+  double flops_sequential = total_flops / time_sequential;
+  if (tiling != 0) {
+    double time_per_iteration_tiling =
+        time_tiling / static_cast<double>(iterations);
+    double flops_tiling = total_flops / time_tiling;
+    outFile << N << "," << time_per_iteration << "," << total_flops << ","
+            << flops_sequential << "," << time_per_iteration_tiling << ","
+            << flops_tiling << std::endl;
+  } else {
+    outFile << N << "," << time_per_iteration << "," << total_flops << ","
+            << flops_sequential << "," << std::endl;
+  }
+
   outFile.close();
   MPI_Finalize();
+  return 0;
 }
